@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: blood-bank-frontend
+  name: blood-bank-frontend-deployment
+  namespace: blood-bank
+spec:
+  replicas: 1
+  revisionHistoryLimit: 11
+  selector:
+    matchLabels:
+      app: blood-bank-frontend
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: blood-bank-frontend
+      namespace: blood-bank
+    spec:
+      containers:
+        - image: qgiaaa/blood-bank-frontend:v1 
+          imagePullPolicy: Always
+          name: blood-bank-frontend
+          ports:
+            - containerPort: 3001
+              name: tcp
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blood-bank-frontend-service
+  namespace: blood-bank
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: tcp
+      port: 3001
+      protocol: TCP
+      targetPort: 3001
+  selector:
+    app: blood-bank-frontend
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blood-bank-frontend-ingress
+  namespace: blood-bank
+spec:
+  ingressClassName: nginx # -> use ingress nginx controller 
+  rules:
+    - host: blood-bank.com 
+      http: # -> only requests with http: blood-bank.com will match this rule  
+        paths:
+          - backend:
+              service:
+                name: blood-bank-frontend-service
+                port:
+                  number: 3001 # port of service, not ingress 
+            path: /
+            pathType: Prefix # -> tất cả path bắt đầu bằng / -> tất cả đều match điều kiện này 
+
+# Browser -> http://blood-bank.com -> ingress controller -> blood-bank-frontend-service -> frontend pod 

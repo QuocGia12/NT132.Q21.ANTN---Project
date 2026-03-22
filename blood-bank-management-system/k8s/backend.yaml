@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: blood-bank-backend
+  name: blood-bank-backend-deployment
+  namespace: blood-bank
+spec:
+  replicas: 1
+  revisionHistoryLimit: 11
+  selector:
+    matchLabels:
+      app: blood-bank-backend
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: blood-bank-backend
+      namespace: blood-bank 
+    spec:
+      containers:
+        - image: qgiaaa/blood-bank-backend:v1  
+          imagePullPolicy: Always
+          name: blood-bank-backend
+          ports:
+            - containerPort: 3000
+              name: tcp
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blood-bank-backend-service
+  namespace: blood-bank
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: tcp
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: blood-bank-backend
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blood-bank-backend-ingress
+  namespace: blood-bank
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api-blood-bank.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: blood-bank-backend-service
+                port:
+                  number: 3000
+            path: /
+            pathType: Prefix
+
+
+
+
