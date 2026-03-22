@@ -26,6 +26,9 @@ spec:
         - image: qgiaaa/blood-bank-backend:v1  
           imagePullPolicy: Always
           name: blood-bank-backend
+          envFrom:
+            - secretRef:
+                name: secret-backend
           ports:
             - containerPort: 3000
               name: tcp
@@ -69,7 +72,6 @@ spec:
                   number: 3000
             path: /
             pathType: Prefix
-
 
 
 
